@@ -78,7 +78,7 @@ proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
     else: req.makeUri(nextDay.format("dd'-'MM'-'yyyy'.html'"), absolute = false)
   result = 
     html(
-      head(title("#nimrod logs for " & logger.startTime.format("dd'-'MM'-'yyyy")),
+      head(title("#nim logs for " & logger.startTime.format("dd'-'MM'-'yyyy")),
            meta(content="text/html; charset=UTF-8", `http-equiv` = "Content-Type"),
            link(rel="stylesheet", href=req.makeUri("css/boilerplate.css", absolute = false)),
            link(rel="stylesheet", href=req.makeUri("css/log.css", absolute = false))

@@ -48,7 +48,7 @@ proc writeLog(logger: PLogger, msg: TIRCEvent) =
   logger.logFile.writeFlush($$(time: getTime(), msg: msg) & "\n")
 
 proc log*(logger: PLogger, msg: TIRCEvent) =
-  if msg.origin != "#nimrod" and msg.cmd notin {MQuit, MNick}: return
+  if msg.origin != "#nim" and msg.cmd notin {MQuit, MNick}: return
   if getTime().getGMTime().yearday != logger.startTime.yearday:
     # It's time to cycle to next day.
     # Reset logger.
@@ -77,7 +77,7 @@ proc log*(logger: PLogger, nick, msg, chan: string) =
 
 when isMainModule:
   var logger = newLogger("testing/logstest")
-  logger.log("dom96", "Hello!", "#nimrod")
-  logger.log("dom96", "Hello\r, testingí, \"\"", "#nimrod")
+  logger.log("dom96", "Hello!", "#nim")
+  logger.log("dom96", "Hello\r, testingí, \"\"", "#nim")
   #logger = loadLogger("testing/logstest/26-05-2013.logs")
   echo repr(logger)

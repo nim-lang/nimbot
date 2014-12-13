@@ -12,7 +12,7 @@ type
 
 const
   ircServer = "irc.freenode.net"
-  joinChans = @["#nimrod"]
+  joinChans = @["#nim"]
   botNickname = "NimBot"
 
 proc getCommandArgs(state: State) =
