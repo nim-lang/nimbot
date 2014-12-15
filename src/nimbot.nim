@@ -1,5 +1,5 @@
 import irc, asyncdispatch, strutils, times, irclogrender, irclog, parseopt,
-  future, jester, os, re
+  future, jester, os, re, httpclient, json, base64
 
 type
   AsyncIRC = PAsyncIRC
@@ -9,6 +9,7 @@ type
     ircServerAddr: string
     logger: PLogger
     irclogsFilename: string
+    packagesJson: string # Nimble packages.json
 
 const
   ircServer = "irc.freenode.net"
@@ -30,6 +31,26 @@ proc getCommandArgs(state: State) =
         state.irclogsFilename = value
       else: quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
     of cmdEnd: assert false
+
+proc refreshPackagesJson(state: State) {.async.} =
+  var client = newAsyncHttpClient()
+  let resp = await client.get("https://raw.githubusercontent.com/nimrod-code/" &
+    "packages/master/packages.json")
+  if resp.status.startsWith("200"):
+    try:
+      var test = parseJson(resp.body)
+      state.packagesJson = base64.encode(resp.body)
+    except:
+      echo("Got incorrect packages.json, not saving.")
+      echo(getCurrentExceptionMsg())
+      if state.packagesJson == nil: raise
+  else:
+    echo("Could not retrieve packages.json.")
+
+proc refreshLoop(state: State) {.async.} =
+  while true:
+    await refreshPackagesJson(state)
+    await sleepAsync(6 * 60 * 60 * 1000) # 6 hours.
 
 proc onIrcEvent(client: PAsyncIrc, event: TIrcEvent, state: State) {.async.} =
   case event.typ
@@ -105,5 +126,16 @@ routes:
       resp readFile(logsPath)
     else:
       halt()
+
+  get "/packages/?":
+    var jsonDoc = %{"content": %state.packagesJson}
+    cond (jsonDoc != nil)
+    var text = $jsonDoc
+    if @"callback" != "":
+      text = @"callback" & "(" & text & ")"
+
+    resp text, "text/javascript"
+
+asyncCheck refreshLoop(state)
 
 runForever()
