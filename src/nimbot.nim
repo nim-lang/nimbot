@@ -81,21 +81,29 @@ routes:
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
   
-  get re"^\/([0-9]{2})-([0-9]{2})-([0-9]{4})\.html$":
+  get re"^\/([0-9]{2})-([0-9]{2})-([0-9]{4})\.(.+)$":
     # /@dd-@MM-@yyyy.html
     let day = request.matches[0]
     let month = request.matches[1]
     let year = request.matches[2]
+    let format = request.matches[3]
     cond (day.parseInt() <= 31)
     cond (month.parseInt() <= 12)
     var logs: PLogRenderer
     let logsPath = state.irclogsFilename / "$1-$2-$3.logs" % [day, month, year]
-    if existsFile(logsPath):
-      logs = loadRenderer(logsPath)
-      resp logs.renderHTML(request)
+    # TODO: Async file read.
+    case format
+    of "html":
+      if existsFile(logsPath):
+        logs = loadRenderer(logsPath)
+        resp logs.renderHTML(request)
+      else:
+        let logsHtml = logsPath.changeFileExt("html")
+        cond existsFile(logsHtml)
+        resp readFile(logsHtml)
+    of "logs":
+      resp readFile(logsPath)
     else:
-      let logsHtml = logsPath.changeFileExt("html")
-      cond existsFile(logsHtml)
-      resp readFile(logsHtml)
+      halt()
 
 runForever()
