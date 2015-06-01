@@ -20,16 +20,16 @@ proc getCommandArgs(state: State) =
   for kind, key, value in getOpt():
     case kind
     of cmdArgument:
-      quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+      quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
     of cmdLongOption, cmdShortOption:
       if value == "":
-        quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+        quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
       case key
       of "serverAddr", "sa":
         state.ircServerAddr = value
       of "irclogs", "il":
         state.irclogsFilename = value
-      else: quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+      else: quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
     of cmdEnd: assert false
 
 proc refreshPackagesJson(state: State) {.async.} =
