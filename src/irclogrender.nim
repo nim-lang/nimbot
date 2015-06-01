@@ -35,12 +35,14 @@ proc renderItems(logger: PLogRenderer): string =
       c = "nick"
     of MQuit:
       c = "quit"
+    of MKick:
+      c = "kick"
     else:
       nil
     var message = i.msg.params[i.msg.params.len-1]
     if message.startswith("\x01ACTION "):
       c = "action"
-      message = message[8 .. -2]
+      message = message[8 .. ^2]
     
     if c == "":
       result.add(tr(td(i.time.getGMTime().format("HH':'mm':'ss")),
@@ -58,6 +60,10 @@ proc renderItems(logger: PLogRenderer): string =
         message = i.msg.nick & " quit (" & message & ")"
       of "action":
         message = i.msg.nick & " " & message
+      of "kick":
+        message = i.msg.nick & " has kicked " & i.msg.params[1] & " from " & i.msg.params[0]
+        if len(i.msg.params) > 2:
+          message = message & " (" & i.msg.params[2] & ")"
       else: assert(false)
       result.add(tr(class=c,
                     td(i.time.getGMTime().format("HH':'mm':'ss")),
