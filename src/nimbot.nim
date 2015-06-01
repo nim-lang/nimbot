@@ -1,5 +1,7 @@
 import irc, asyncdispatch, strutils, times, irclogrender, irclog, parseopt,
-  future, jester, os, re, httpclient, json, base64
+  future, jester, os, re, json, base64
+
+import httpclient except Response
 
 type
   AsyncIRC = PAsyncIRC
@@ -20,16 +22,16 @@ proc getCommandArgs(state: State) =
   for kind, key, value in getOpt():
     case kind
     of cmdArgument:
-      quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+      quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
     of cmdLongOption, cmdShortOption:
       if value == "":
-        quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+        quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
       case key
       of "serverAddr", "sa":
         state.ircServerAddr = value
       of "irclogs", "il":
         state.irclogsFilename = value
-      else: quit("Syntax: ./ircbot [--sa serverAddr] --il irclogsPath")
+      else: quit("Syntax: ./ircbot [--sa:serverAddr] --il:irclogsPath")
     of cmdEnd: assert false
 
 proc refreshPackagesJson(state: State) {.async.} =

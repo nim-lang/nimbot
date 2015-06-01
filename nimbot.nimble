@@ -10,4 +10,4 @@ srcDir = "src"
 bin = "nimbot"
 
 [Deps]
-Requires: "nimrod >= 0.10, irc#head"
+Requires: "nimrod >= 0.10, irc#head, jester#head"
