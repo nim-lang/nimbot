@@ -226,8 +226,6 @@ async:
       raise newException(ValueError,
           "Hub sent incorrect response to welcome: " & line)
 
-    asyncCheck hubConnectionLoop(state)
-
 var state = open()
 asyncCheck state.ircClient.run()
 
