@@ -271,7 +271,12 @@ routes:
     if @"callback" != "":
       text = @"callback" & "(" & text & ")"
 
-    resp text, "text/javascript"
+    resp text, "application/javascript"
+
+  get "/packages.json":
+    cond (state.packagesJson != nil)
+
+    resp base64.decode(state.packagesJson), "application/json"
 
 asyncCheck refreshLoop(state)
 
