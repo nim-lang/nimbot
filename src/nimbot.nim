@@ -113,7 +113,7 @@ proc limitCommitMsg(m: string): string =
 
 proc onHubMessage(state: State, json: JsonNode) {.async.} =
   if json.existsKey("payload"):
-    if isRepoAnnounced(state, json["payload"]["repository"]["url"].str):
+    if isRepoAnnounced(state, json["payload"]["repository"]["full_name"].str):
       let commitsToAnnounce = min(4, json["payload"]["commits"].len)
       if commitsToAnnounce != 0:
         for i in 0..commitsToAnnounce-1:
