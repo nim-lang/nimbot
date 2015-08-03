@@ -280,4 +280,6 @@ routes:
 
 asyncCheck refreshLoop(state)
 
+asyncCheck hubConnectionLoop(state)
+
 runForever()
