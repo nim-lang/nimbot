@@ -1,4 +1,4 @@
-import htmlgen, times, irc, streams, strutils, os, json, parseutils, marshal
+import htmlgen, times, irc, streams, strutils, os, json, parseutils, marshal, sequtils
 from xmltree import escape
 
 type
@@ -40,7 +40,7 @@ proc newLogger*(logFilepath: string): PLogger =
     result.logFile.writeFlush($$epochTime() & "\n")
 
 proc `$`(s: seq[string]): string =
-  var escaped = system.map(s) do (x: string) -> string:
+  var escaped = sequtils.map(s) do (x: string) -> string:
     strutils.escape(x)
   result = "[" & join(escaped, ",") & "]"
 
