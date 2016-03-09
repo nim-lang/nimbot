@@ -234,6 +234,8 @@ routes:
   get "/?":
     let curTime = getTime().getGMTime()
     let path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.logs'")
+    if not existsFile(path):
+      writeFile(path, $epochTime() & "\n")
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
 
