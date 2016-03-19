@@ -18,8 +18,8 @@ proc loadLogger*(f: string): PLogger =
   let lines = logs.splitLines()
   # Line 1: Start time
   result.startTime = fromSeconds(to[float](lines[0])).getGMTime()
-  
-  doAssert open(result.logFile, f, fmAppend)
+  if not open(result.logFile, f, fmAppend):
+    echo("Warning: Could not open logger: " & f)
   result.logFilepath = f.splitFile.dir
 
 proc writeFlush(file: TFile, s: string) =

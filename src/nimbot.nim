@@ -169,6 +169,10 @@ proc open(): State =
   if res.irclogsFilename.isNil:
     quit("No IRC logs filename specified.")
 
+
+  if not dirExists(res.irclogsFilename):
+    quit("IRC logs path does not exist: " & res.irclogsFilename)
+
   res.logger = newLogger(res.irclogsFilename)
 
   res.ircClient = newAsyncIrc(ircServer, nick=botNickname,
@@ -234,8 +238,6 @@ routes:
   get "/?":
     let curTime = getTime().getGMTime()
     let path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.logs'")
-    if not existsFile(path):
-      writeFile(path, $epochTime() & "\n")
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
 
