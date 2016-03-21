@@ -22,7 +22,7 @@ proc loadRenderer*(f: string): PLogRenderer =
       result.items.add(to[tuple[time: TTime, msg: TIRCEvent]](lines[i]))
     inc i
 
-proc renderItems(logger: PLogRenderer): string =
+proc renderItems(logger: PLogRenderer, isToday: bool): string =
   result = ""
   for i in logger.items:
     var c = ""
@@ -43,9 +43,11 @@ proc renderItems(logger: PLogRenderer): string =
     if message.startswith("\x01ACTION "):
       c = "action"
       message = message[8 .. ^2]
-    
+
+    let timestamp = i.time.getGMTime().format("HH':'mm':'ss")
+    let prefix = if isToday: logger.startTime.format("dd'-'MM'-'yyyy'.html'") & "#" else: "#"
     if c == "":
-      result.add(tr(td(i.time.getGMTime().format("HH':'mm':'ss")),
+      result.add(tr(td(a(id=timestamp, href=prefix & timestamp, timestamp)),
                     td(class="nick", xmltree.escape(i.msg.nick)),
                     td(class="msg", xmltree.escape(message))))
     else:
@@ -66,7 +68,7 @@ proc renderItems(logger: PLogRenderer): string =
           message = message & " (" & i.msg.params[2] & ")"
       else: assert(false)
       result.add(tr(class=c,
-                    td(i.time.getGMTime().format("HH':'mm':'ss")),
+                    td(a(id=timestamp, href=prefix & timestamp, timestamp)),
                     td(class="nick", "*"),
                     td(class="msg", xmltree.escape(message))))
 
@@ -97,7 +99,7 @@ proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
         ),
         hr(),
         table(
-          renderItems(logger)
+          renderItems(logger, isToday)
         )
       )
     )

@@ -53,7 +53,7 @@ proc refreshPackagesJson(state: State) {.async.} =
     echo("Could not retrieve packages.json.")
 
 proc sendMessage(state: State, chan, msg: string): Future[void] =
-  state.logger.log("NimBot", msg, chan)
+  state.logger.log(botNickname, msg, chan)
   result = state.ircClient.privmsg(chan, msg)
 
 proc refreshLoop(state: State) {.async.} =
