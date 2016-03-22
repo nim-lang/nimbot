@@ -47,9 +47,9 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
     let timestamp = i.time.getGMTime().format("HH':'mm':'ss")
     let prefix = if isToday: logger.startTime.format("dd'-'MM'-'yyyy'.html'") & "#" else: "#"
     if c == "":
-      result.add(tr(td(a(id=timestamp, href=prefix & timestamp, timestamp)),
+      result.add(tr(td(a(id=timestamp, href=prefix & timestamp, class="time", timestamp)),
                     td(class="nick", xmltree.escape(i.msg.nick)),
-                    td(class="msg", xmltree.escape(message))))
+                    td(id="M" & timestamp, class="msg", xmltree.escape(message))))
     else:
       case c
       of "join":
@@ -68,9 +68,9 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
           message = message & " (" & i.msg.params[2] & ")"
       else: assert(false)
       result.add(tr(class=c,
-                    td(a(id=timestamp, href=prefix & timestamp, timestamp)),
+                    td(a(id=timestamp, href=prefix & timestamp, class="time", timestamp)),
                     td(class="nick", "*"),
-                    td(class="msg", xmltree.escape(message))))
+                    td(id="M" & timestamp, class="msg", xmltree.escape(message))))
 
 proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
   let today       = getTime().getGMTime()
@@ -89,7 +89,8 @@ proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
       head(title("#nim logs for " & logger.startTime.format("dd'-'MM'-'yyyy")),
            meta(content="text/html; charset=UTF-8", `http-equiv` = "Content-Type"),
            link(rel="stylesheet", href=req.makeUri("css/boilerplate.css", absolute = false)),
-           link(rel="stylesheet", href=req.makeUri("css/log.css", absolute = false))
+           link(rel="stylesheet", href=req.makeUri("css/log.css", absolute = false)),
+           script(src="js/log.js", type="text/javascript")
       ),
       body(
         htmlgen.`div`(id="controls",
