@@ -59,3 +59,17 @@ hr {
   border:0;
   height: 2px;
 }
+
+td.selected {
+  background-color: #F8EEC7;
+  color: #000000 !important;
+}
+
+a.time {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+a.time:hover {
+  color: #BABABA;
+}
