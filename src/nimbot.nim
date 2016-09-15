@@ -266,6 +266,9 @@ routes:
     else:
       halt()
 
+  get "/static/css/log.css":
+    redirect(uri("css/log.css"))
+
   get "/packages/?":
     var jsonDoc = %{"content": %state.packagesJson}
     cond (jsonDoc != nil)
