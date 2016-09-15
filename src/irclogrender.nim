@@ -1,4 +1,4 @@
-import irc, htmlgen, times, strutils, marshal, os, xmltree
+import irc, htmlgen, times, strutils, marshal, os, xmltree, re
 from jester import PRequest, makeUri
 import irclog
 
@@ -15,12 +15,27 @@ proc loadRenderer*(f: string): PLogRenderer =
   var i = 1
   # Line 1: Start time
   result.startTime = fromSeconds(to[float](lines[0])).getGMTime()
-  
+
   result.logFilepath = f.splitFile.dir
   while i < lines.len:
     if lines[i] != "":
       result.items.add(to[tuple[time: TTime, msg: TIRCEvent]](lines[i]))
     inc i
+
+proc renderMessage(msg: string): string =
+  # Transforms anything that looks like a hyperlink into one in the HTML.
+  let pattern = re"(https?|ftp)://[^\s/$.?#].[^\s]*"
+  result = ""
+
+  var i = 0
+  while true:
+    let (first, last) = msg.findBounds(pattern, start = i)
+    if first == -1: break
+    echo(msg[i .. first-1], "|", msg[first .. last])
+    result.add(xmltree.escape(msg[i .. first-1]))
+    result.add(a(href=msg[first .. last], xmltree.escape(msg[first .. last])))
+    i = last+1
+  result.add(xmltree.escape(msg[i .. ^1]))
 
 proc renderItems(logger: PLogRenderer, isToday: bool): string =
   result = ""
@@ -49,7 +64,7 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
     if c == "":
       result.add(tr(td(a(id=timestamp, href=prefix & timestamp, class="time", timestamp)),
                     td(class="nick", xmltree.escape(i.msg.nick)),
-                    td(id="M" & timestamp, class="msg", xmltree.escape(message))))
+                    td(id="M" & timestamp, class="msg", message.renderMessage)))
     else:
       case c
       of "join":
@@ -84,7 +99,7 @@ proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
   let nextUrl     =
     if isToday: ""
     else: req.makeUri(nextDay.format("dd'-'MM'-'yyyy'.html'"), absolute = false)
-  result = 
+  result =
     html(
       head(title("#nim logs for " & logger.startTime.format("dd'-'MM'-'yyyy")),
            meta(content="text/html; charset=UTF-8", `http-equiv` = "Content-Type"),
