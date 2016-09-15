@@ -7,7 +7,7 @@ body {
 
 table {
   margin-top: 15pt;
-
+  border-collapse: collapse;
 }
 
 table td, table th {
@@ -47,6 +47,10 @@ a:link {
 
 a:hover {
   color: #CC880A;
+}
+
+a:visited {
+  color: rgb(161, 159, 7);
 }
 
 #controls {
