@@ -5,7 +5,6 @@ import httpclient except Response
 
 
 type
-  AsyncIRC = PAsyncIRC
   IrcEvent = TIrcEvent
   State = ref object
     ircClient: AsyncIRC
@@ -61,7 +60,7 @@ proc refreshLoop(state: State) {.async.} =
     await refreshPackagesJson(state)
     await sleepAsync(6 * 60 * 60 * 1000) # 6 hours.
 
-proc onIrcEvent(client: PAsyncIrc, event: TIrcEvent, state: State) {.async.} =
+proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
   case event.typ
   of EvConnected:
     nil
