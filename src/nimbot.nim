@@ -18,7 +18,7 @@ const
   ircServer = "irc.freenode.net"
   joinChans = @["#nim", "#nimbuild"]
   announceChans = @["#nimbuild"]
-  botNickname = "NimBot-test"
+  botNickname = "NimBot"
 
 proc getCommandArgs(state: State) =
   for kind, key, value in getOpt():
