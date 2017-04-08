@@ -55,9 +55,11 @@ proc log*(logger: PLogger, msg: TIRCEvent) =
     logger.logFile.close()
     logger.startTime = getTime().getGMTime()
     let log = logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.logs'")
+    let logExists = existsFile(log)
     doAssert open(logger.logFile, log, fmAppend)
-    # Write start time
-    logger.logFile.writeFlush($epochTime() & "\n")
+    if not logExists:
+      # Write start time
+      logger.logFile.writeFlush($epochTime() & "\n")
     
   case msg.cmd
   of MPrivMsg, MJoin, MPart, MNick, MQuit: # TODO: MTopic? MKick?
