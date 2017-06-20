@@ -42,8 +42,9 @@ proc refreshPackagesJson(state: State) {.async.} =
     "packages/master/packages.json")
   if resp.status.startsWith("200"):
     try:
-      var test = parseJson(resp.body)
-      state.packagesJson = base64.encode(resp.body)
+      let body = await resp.body
+      var test = parseJson(body)
+      state.packagesJson = base64.encode(body)
     except:
       echo("Got incorrect packages.json, not saving.")
       echo(getCurrentExceptionMsg())
