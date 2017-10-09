@@ -63,6 +63,17 @@ proc refreshLoop(state: State) {.async.} =
     await refreshPackagesJson(state)
     await sleepAsync(6 * 60 * 60 * 1000) # 6 hours.
 
+proc trimGitter(msg: string): string =
+  # Handle messages from FromGitter.
+  result = msg
+  var msg = msg.multiReplace({"\2": "", "\15": ""})
+  if msg.startsWith("<"):
+    let nickEnd = msg.find("> ")
+    if nickEnd == -1:
+      return
+
+    result = msg[nickEnd + 2 .. ^1]
+
 proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
   case event.typ
   of EvConnected:
@@ -72,7 +83,7 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
   of EvMsg:
     state.logger.log(event)
     if event.cmd == MPrivMsg:
-      var msg = event.params[event.params.high]
+      var msg = event.params[event.params.high].trimGitter()
       proc pmOrig(msg: string): Future[void] =
         state.sendMessage(event.origin, msg)
       if msg == "!lag":
@@ -89,8 +100,10 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
         let evalResult = await evalCode(code)
         # TODO: Gist output that is greater than ~500 chars.
         var log = evalResult.log
-        log = log.replace("\n", "↵").replace("\r", "↵").replace("\l", "↵")
+        log = log.multiReplace({"\n": "↵", "\r": "↵", "\l": "↵"})
         log = log[0 .. 450]
+        if log.endsWith("↵"):
+          log = log[0 .. ^(len("↵")+1)]
         if evalResult.log.len >= 450:
           log.add("...")
         if log.len == 0: log = "<no output>"
@@ -99,7 +112,7 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
           await pmOrig(log)
         else:
           await pmOrig("Compile failed: " & log)
-    echo("< ", event.raw)
+    echo("< ", event.raw.repr)
 
 # -- Commit message handling
 
@@ -302,6 +315,6 @@ routes:
 
 asyncCheck refreshLoop(state)
 
-asyncCheck hubConnectionLoop(state)
+#asyncCheck hubConnectionLoop(state)
 
 runForever()
