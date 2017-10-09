@@ -88,9 +88,13 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
         let code = msg[6 .. ^1]
         let evalResult = await evalCode(code)
         # TODO: Gist output that is greater than ~500 chars.
-        var log = evalResult.log[0 .. 450]
+        var log = evalResult.log
+        log = log.replace("\n", "↵").replace("\r", "↵").replace("\l", "↵")
+        log = log[0 .. 450]
         if evalResult.log.len >= 450:
           log.add("...")
+        if log.len == 0: log = "<no output>"
+
         if evalResult.success:
           await pmOrig(log)
         else:
