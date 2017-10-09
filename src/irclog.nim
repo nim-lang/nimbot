@@ -1,5 +1,6 @@
-import htmlgen, times, irc, streams, strutils, os, json, parseutils, marshal, sequtils
+import htmlgen, times, irc, streams, strutils, os, parseutils, marshal, sequtils
 from xmltree import escape
+import json except to
 
 type
   TLogger* = object of TObject # Items get erased when new day starts.
