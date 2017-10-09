@@ -1,7 +1,9 @@
-import irc, asyncdispatch, strutils, times, irclogrender, irclog, parseopt,
+import irc, asyncdispatch, strutils, times, parseopt,
   future, jester, os, re, json, base64, asyncnet
 
 import httpclient except Response
+
+import playground, irclogrender, irclog
 
 
 type
@@ -82,6 +84,17 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
           await pmOrig("Unknown.")
       if msg == "!ping":
         await pmOrig("pong")
+      if msg.startsWith("!eval "):
+        let code = msg[6 .. ^1]
+        let evalResult = await evalCode(code)
+        # TODO: Gist output that is greater than ~500 chars.
+        var log = evalResult.log[0 .. 450]
+        if evalResult.log.len >= 450:
+          log.add("...")
+        if evalResult.success:
+          await pmOrig(log)
+        else:
+          await pmOrig("Compile failed: " & log)
     echo("< ", event.raw)
 
 # -- Commit message handling
