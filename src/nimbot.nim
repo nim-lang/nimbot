@@ -102,7 +102,7 @@ proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
         var log = evalResult.log
         log = log.multiReplace({"\n": "↵", "\r": "↵", "\l": "↵",
                                 "\1": "💩"})
-        log = log[0 .. 450]
+        log = log.substr(0, 450)
         if log.endsWith("↵"):
           log = log[0 .. ^(len("↵")+1)]
         if evalResult.log.len >= 450:
