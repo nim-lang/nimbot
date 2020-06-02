@@ -46,7 +46,7 @@ proc `$`(s: seq[string]): string =
   result = "[" & join(escaped, ",") & "]"
 
 proc writeLog(logger: PLogger, msg: IRCEvent) =
-  logger.logFile.writeFlush($$(time: getTime(), msg: msg) & "\n")
+  logger.logFile.writeFlush($(%*{"time": getTime(), "msg": msg}) & "\n")
 
 proc log*(logger: PLogger, msg: IRCEvent) =
   if msg.origin != "#nim" and msg.cmd notin {MQuit, MNick}: return

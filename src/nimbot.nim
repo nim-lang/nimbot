@@ -264,7 +264,7 @@ asyncCheck state.ircClient.run()
 
 var settings = newSettings(port = Port(5001))
 routes:
-  get "/?":
+  get "/":
     let curTime = getTime().utc()
     let path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.logs'")
     var logs = loadRenderer(path)

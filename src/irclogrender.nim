@@ -1,10 +1,11 @@
-import irc, htmlgen, times, strutils, marshal, os, xmltree, re
+import irc, htmlgen, times, strutils, marshal, os, xmltree, re, json
 from jester import Request, makeUri
 import irclog
 
 type
+  Entry = tuple[time: Time, msg: IRCEvent]
   TLogRenderer = object of TLogger
-    items*: seq[tuple[time: Time, msg: IRCEvent]] ## Only used for HTML gen
+    items*: seq[Entry] ## Only used for HTML gen
   PLogRenderer* = ref TLogRenderer
 
 proc loadRenderer*(f: string): PLogRenderer =
@@ -19,7 +20,7 @@ proc loadRenderer*(f: string): PLogRenderer =
   result.logFilepath = f.splitFile.dir
   while i < lines.len:
     if lines[i] != "":
-      result.items.add(to[tuple[time: Time, msg: IRCEvent]](lines[i]))
+      result.items.add(json.to(lines[i].parseJson, Entry))
     inc i
 
 proc renderMessage(msg: string): string =
