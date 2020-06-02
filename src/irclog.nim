@@ -29,7 +29,7 @@ proc writeFlush(file: File, s: string) =
 
 proc newLogger*(logFilepath: string): PLogger =
   let startTime = getTime().utc()
-  let log = logFilepath / startTime.format("dd'-'MM'-'yyyy'.logs'")
+  let log = logFilepath / startTime.format("dd'-'MM'-'yyyy'.json'")
   if existsFile(log):
     result = loadLogger(log)
   else:
@@ -55,7 +55,7 @@ proc log*(logger: PLogger, msg: IRCEvent) =
     # Reset logger.
     logger.logFile.close()
     logger.startTime = getTime().utc()
-    let log = logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.logs'")
+    let log = logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.json'")
     doAssert open(logger.logFile, log, fmAppend)
     # Write start time
     logger.logFile.writeFlush($epochTime() & "\n")

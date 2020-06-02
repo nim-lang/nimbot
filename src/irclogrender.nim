@@ -1,12 +1,54 @@
 import irc, htmlgen, times, strutils, marshal, os, xmltree, re, json
 from jester import Request, makeUri
 import irclog
+import strtabs
 
 type
+  # These legacy types are required to properly marshal the old format so old
+  # logs can still be read. The only differences are the timestamps and the new
+  # json format for strtabs.
+  LegacyIrcEvent = object
+    case typ: IrcEventType
+    of EvConnected:
+      nil
+    of EvDisconnected:
+      nil
+    of EvTimeout:
+      nil
+    of EvMsg:
+      cmd: IrcMType
+      nick, user, host, servername: string
+      numeric: string
+      tags: LegacyStringTableRef
+      params: seq[string]
+      origin: string
+      raw: string
+      timestamp: int64
+  LegacyStringTableRef = ref StringTableObj
+  LegacyEntry = tuple[time: int64, msg: LegacyIRCEvent]
+
   Entry = tuple[time: Time, msg: IRCEvent]
   TLogRenderer = object of TLogger
     items*: seq[Entry] ## Only used for HTML gen
   PLogRenderer* = ref TLogRenderer
+
+proc toNewEntry(entry: LegacyEntry): Entry =
+  result.time = fromUnix(entry.time)
+  result.msg = IRCEvent(
+    typ: entry.msg.typ
+  )
+  if result.msg.typ == EvMsg:
+    result.msg.cmd = entry.msg.cmd
+    result.msg.nick = entry.msg.nick
+    result.msg.user = entry.msg.user
+    result.msg.host = entry.msg.host
+    result.msg.servername = entry.msg.servername
+    result.msg.numeric = entry.msg.numeric
+    result.msg.tags = cast[StringTableRef](entry.msg.tags)
+    result.msg.params = entry.msg.params
+    result.msg.origin = entry.msg.origin
+    result.msg.raw = entry.msg.raw
+    result.msg.timestamp = entry.msg.timestamp.fromUnix
 
 proc loadRenderer*(f: string): PLogRenderer =
   new result
@@ -18,9 +60,13 @@ proc loadRenderer*(f: string): PLogRenderer =
   result.startTime = fromUnixFloat(to[float](lines[0])).utc()
 
   result.logFilepath = f.splitFile.dir
+  echo "Reading file: ", f, ": ", f.endsWith(".logs")
   while i < lines.len:
     if lines[i] != "":
-      result.items.add(json.to(lines[i].parseJson, Entry))
+      if f.endsWith(".logs"):
+        result.items.add(marshal.to[LegacyEntry](lines[i]).toNewEntry)
+      elif f.endsWith(".json"):
+        result.items.add(json.to(lines[i].parseJson, Entry))
     inc i
 
 const IRCColours = [

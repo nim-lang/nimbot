@@ -266,7 +266,9 @@ var settings = newSettings(port = Port(5001))
 routes:
   get "/":
     let curTime = getTime().utc()
-    let path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.logs'")
+    var path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.json'")
+    if not existsFile(path):
+      path = path.changeFileExt("logs")
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
 
@@ -290,7 +292,9 @@ routes:
         let logsHtml = logsPath.changeFileExt("html")
         cond existsFile(logsHtml)
         resp readFile(logsHtml)
-    of "logs", "json":
+    of "json":
+      resp readFile(logsPath.changeFileExt("json"))
+    of "logs":
       resp readFile(logsPath)
     else:
       halt()
