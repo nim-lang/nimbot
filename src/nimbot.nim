@@ -290,7 +290,7 @@ routes:
         let logsHtml = logsPath.changeFileExt("html")
         cond existsFile(logsHtml)
         resp readFile(logsHtml)
-    of "logs":
+    of "logs", "json":
       resp readFile(logsPath)
     else:
       halt()

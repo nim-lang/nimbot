@@ -23,20 +23,104 @@ proc loadRenderer*(f: string): PLogRenderer =
       result.items.add(json.to(lines[i].parseJson, Entry))
     inc i
 
+const IRCColours = [
+  "#e6e6e6",
+  "#000000",
+  "#bd93f9",
+  "#50fa7b",
+  "#ff5555",
+  "#ff5555",
+  "#ff79c6",
+  "#ffb86c",
+  "#f1fa8c",
+  "#50fa7b",
+  "#8be9fd",
+  "#8be9fd",
+  "#bd93f9",
+  "#ff79c6",
+  "#b3b3b3",
+  "#cccccc"
+]
+
+proc colourMessage(msg: string): string =
+  var
+    currentChar = 0
+    c: char
+    openedTags = 0
+    currentStyle = ""
+    bold, italic, underline = false
+  template switchStyle(style: var bool, css: string) =
+    if not style:
+      currentStyle &= css
+      style = true
+    else:
+      result &= "</span>"
+      openedTags -= 1
+      style = false
+  while currentChar < msg.len:
+    c = msg[currentChar]
+    inc currentChar
+    case ord c:
+    of 0x02: switchStyle bold, "font-weight: bold;"
+    of 0x1D: switchStyle italic, "font-style: italic;"
+    of 0x1F: switchStyle underline, "text-decoration: underline;"
+    of 0x03:
+      let colourCode = to[int](msg[currentChar..^1])
+      currentStyle &= "color: " & IRCColours[colourCode] & ";"
+      currentChar += 2
+    of 0x0F:
+      result &= "</span>".repeat openedTags
+      openedTags = 0
+      bold = false
+      italic = false
+      underline = false
+    else:
+      if currentStyle.len != 0:
+        result &= "<span style=\"" & currentStyle & "\">"
+        openedTags += 1
+        currentStyle = ""
+      result &= c
+  result &= "</span>".repeat openedTags
+
+const NickColours = [
+  "#6272a4",
+  "#8be9fd",
+  "#50fa7b",
+  "#ffb86c",
+  "#ff79c6",
+  "#bd93f9",
+  "#ff5555",
+  "#f1fa8c",
+  "#6272a4",
+  "#8be9fd",
+  "#50fa7b",
+  "#ffb86c",
+  "#ff79c6",
+  "#bd93f9",
+  "#ff5555",
+  "#f1fa8c"
+]
+proc colourNick(msg: string): string =
+  var hash = 0
+  for c in msg:
+    hash += ord c
+  "<span style=\"color: " & NickColours[hash mod 16] & "\">" & msg & "</span>"
+
 proc renderMessage(msg: string): string =
   # Transforms anything that looks like a hyperlink into one in the HTML.
-  let pattern = re"(https?|ftp)://[^\s/$.?#].[^\s]*"
+  let pattern = re"(https?|ftp)://[^\s/$.?#].[^\s\x02\x1D\x1F\x03\x0F]*"
   result = ""
 
   var i = 0
   while true:
     let (first, last) = msg.findBounds(pattern, start = i)
     if first == -1: break
-    echo(msg[i .. first-1], "|", msg[first .. last])
+    #echo(msg[i .. first-1], "|", msg[first .. last])
     result.add(xmltree.escape(msg[i .. first-1]))
     result.add(a(href=msg[first .. last], xmltree.escape(msg[first .. last])))
     i = last+1
   result.add(xmltree.escape(msg[i .. ^1]))
+  result = result.colourMessage()
 
 proc renderItems(logger: PLogRenderer, isToday: bool): string =
   result = ""
@@ -64,7 +148,7 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
     let prefix = if isToday: logger.startTime.format("dd'-'MM'-'yyyy'.html'") & "#" else: "#"
     if c == "":
       result.add(tr(td(a(id=timestamp, href=prefix & timestamp, class="time", timestamp)),
-                    td(class="nick", xmltree.escape(i.msg.nick)),
+                    td(class="nick", xmltree.escape(i.msg.nick).colourNick),
                     td(id="M" & timestamp, class="msg", message.renderMessage)))
     else:
       case c
@@ -106,12 +190,13 @@ proc renderHtml*(logger: PLogRenderer, req: jester.Request): string =
            meta(content="text/html; charset=UTF-8", `http-equiv` = "Content-Type"),
            link(rel="stylesheet", href=req.makeUri("css/boilerplate.css", absolute = false)),
            link(rel="stylesheet", href=req.makeUri("css/log.css", absolute = false)),
+           link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Lato:400,600,900", type="text/css"),
            script(src="js/log.js", type="text/javascript")
       ),
       body(
         htmlgen.`div`(id="controls",
             a(href=prevUrl, "<<"),
-            span(logger.startTime.format("dd'-'MM'-'yyyy")),
+            span(logger.startTime.format(" dd'-'MM'-'yyyy ")),
             (if nextUrl == "": span(">>") else: a(href=nextUrl, ">>"))
         ),
         hr(),
