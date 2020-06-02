@@ -1,25 +1,25 @@
 import irc, htmlgen, times, strutils, marshal, os, xmltree, re
-from jester import PRequest, makeUri
+from jester import Request, makeUri
 import irclog
 
 type
   TLogRenderer = object of TLogger
-    items*: seq[tuple[time: TTime, msg: TIRCEvent]] ## Only used for HTML gen
+    items*: seq[tuple[time: Time, msg: IRCEvent]] ## Only used for HTML gen
   PLogRenderer* = ref TLogRenderer
 
 proc loadRenderer*(f: string): PLogRenderer =
-  new(result)
+  new result
   result.items = @[]
   let logs = readFile(f)
   let lines = logs.splitLines()
   var i = 1
   # Line 1: Start time
-  result.startTime = fromSeconds(to[float](lines[0])).getGMTime()
+  result.startTime = fromUnixFloat(to[float](lines[0])).utc()
 
   result.logFilepath = f.splitFile.dir
   while i < lines.len:
     if lines[i] != "":
-      result.items.add(to[tuple[time: TTime, msg: TIRCEvent]](lines[i]))
+      result.items.add(to[tuple[time: Time, msg: IRCEvent]](lines[i]))
     inc i
 
 proc renderMessage(msg: string): string =
@@ -53,13 +53,13 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
     of MKick:
       c = "kick"
     else:
-      nil
+      discard
     var message = i.msg.params[i.msg.params.len-1]
     if message.startswith("\x01ACTION "):
       c = "action"
       message = message[8 .. ^2]
 
-    let timestamp = i.time.getGMTime().format("HH':'mm':'ss")
+    let timestamp = i.time.utc().format("HH':'mm':'ss")
     let prefix = if isToday: logger.startTime.format("dd'-'MM'-'yyyy'.html'") & "#" else: "#"
     if c == "":
       result.add(tr(td(a(id=timestamp, href=prefix & timestamp, class="time", timestamp)),
@@ -87,15 +87,15 @@ proc renderItems(logger: PLogRenderer, isToday: bool): string =
                     td(class="nick", "*"),
                     td(id="M" & timestamp, class="msg", xmltree.escape(message))))
 
-proc renderHtml*(logger: PLogRenderer, req: jester.PRequest): string =
-  let today       = getTime().getGMTime()
+proc renderHtml*(logger: PLogRenderer, req: jester.Request): string =
+  let today       = getTime().utc()
   let isToday     = logger.startTime.monthday == today.monthday and
                     logger.startTime.month == today.month and
                     logger.startTime.year == today.year
-  let previousDay = logger.startTime - (initInterval(days=1))
+  let previousDay = logger.startTime - (initTimeInterval(days=1))
   let prevUrl     = req.makeUri(previousDay.format("dd'-'MM'-'yyyy'.html'"),
                                 absolute = false)
-  let nextDay     = logger.startTime + (initInterval(days=1))
+  let nextDay     = logger.startTime + (initTimeInterval(days=1))
   let nextUrl     =
     if isToday: ""
     else: req.makeUri(nextDay.format("dd'-'MM'-'yyyy'.html'"), absolute = false)
