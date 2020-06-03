@@ -7,7 +7,6 @@ import playground, irclogrender, irclog
 
 
 type
-  IrcEvent = TIrcEvent
   State = ref object
     ircClient: AsyncIRC
     ircServerAddr: string
@@ -45,12 +44,11 @@ proc refreshPackagesJson(state: State) {.async.} =
   if resp.status.startsWith("200"):
     try:
       let body = await resp.body
-      var test = parseJson(body)
       state.packagesJson = base64.encode(body)
     except:
       echo("Got incorrect packages.json, not saving.")
       echo(getCurrentExceptionMsg())
-      if state.packagesJson == nil: raise
+      if state.packagesJson.len == 0: raise
   else:
     echo("Could not retrieve packages.json.")
 
@@ -74,10 +72,10 @@ proc trimGitter(msg: string): string =
 
     result = msg[nickEnd + 2 .. ^1]
 
-proc onIrcEvent(client: AsyncIRC, event: TIrcEvent, state: State) {.async.} =
+proc onIrcEvent(client: AsyncIRC, event: IrcEvent, state: State) {.async.} =
   case event.typ
   of EvConnected:
-    nil
+    discard
   of EvDisconnected, EvTimeout:
     await client.reconnect()
   of EvMsg:
@@ -143,7 +141,7 @@ proc limitCommitMsg(m: string): string =
   return m1
 
 proc onHubMessage(state: State, json: JsonNode) {.async.} =
-  if json.existsKey("payload"):
+  if json.hasKey("payload"):
     if isRepoAnnounced(state, json["payload"]["repository"]["full_name"].str):
       let commitsToAnnounce = min(4, json["payload"]["commits"].len)
       if commitsToAnnounce != 0:
@@ -172,7 +170,7 @@ proc onHubMessage(state: State, json: JsonNode) {.async.} =
         message.add(json["payload"]["repository"]["owner"]["name"].str & "/" &
                               json["payload"]["repository"]["name"].str & " ")
         let theRef = json["payload"]["ref"].str.getBranch()
-        if existsKey(json["payload"], "base_ref"):
+        if json["payload"].hasKey("base_ref"):
           let baseRef = json["payload"]["base_ref"].str.getBranch()
           message.add("New branch: " & baseRef & " -> " & theRef)
         else:
@@ -180,7 +178,7 @@ proc onHubMessage(state: State, json: JsonNode) {.async.} =
 
         message.add(" by " & json["payload"]["pusher"]["name"].str)
         await sendMessage(state, joinChans[0], message)
-  elif json.existsKey("announce"):
+  elif json.hasKey("announce"):
     proc announce(state: State, msg: string, important: bool) {.async.} =
       var newMsg = ""
       if important:
@@ -197,7 +195,7 @@ proc open(): State =
   new(res)
   getCommandArgs(res)
 
-  if res.irclogsFilename.isNil:
+  if res.irclogsFilename.len == 0:
     quit("No IRC logs filename specified.")
 
 
@@ -266,9 +264,11 @@ asyncCheck state.ircClient.run()
 
 var settings = newSettings(port = Port(5001))
 routes:
-  get "/?":
-    let curTime = getTime().getGMTime()
-    let path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.logs'")
+  get "/":
+    let curTime = getTime().utc()
+    var path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.json'")
+    if not existsFile(path):
+      path = path.changeFileExt("logs")
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
 
@@ -292,6 +292,8 @@ routes:
         let logsHtml = logsPath.changeFileExt("html")
         cond existsFile(logsHtml)
         resp readFile(logsHtml)
+    of "json":
+      resp readFile(logsPath.changeFileExt("json"))
     of "logs":
       resp readFile(logsPath)
     else:
@@ -310,7 +312,7 @@ routes:
     resp text, "application/javascript"
 
   get "/packages.json":
-    cond (state.packagesJson != nil)
+    cond (state.packagesJson.len != 0)
 
     resp base64.decode(state.packagesJson), "application/json"
 

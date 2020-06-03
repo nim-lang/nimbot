@@ -3,10 +3,10 @@ from xmltree import escape
 import json except to
 
 type
-  TLogger* = object of TObject # Items get erased when new day starts.
-    startTime*: TTimeInfo
+  TLogger* = object of RootObj # Items get erased when new day starts.
+    startTime*: DateTime
     logFilepath*: string
-    logFile*: TFile
+    logFile*: File
   PLogger* = ref TLogger
 
 const
@@ -14,26 +14,26 @@ const
            fpGroupRead, fpGroupExec, fpOthersRead, fpOthersExec}
 
 proc loadLogger*(f: string): PLogger =
-  new(result)
+  new result
   let logs = readFile(f)
   let lines = logs.splitLines()
   # Line 1: Start time
-  result.startTime = fromSeconds(to[float](lines[0])).getGMTime()
+  result.startTime = fromUnixFloat(to[float](lines[0])).utc()
   if not open(result.logFile, f, fmAppend):
     echo("Warning: Could not open logger: " & f)
   result.logFilepath = f.splitFile.dir
 
-proc writeFlush(file: TFile, s: string) =
+proc writeFlush(file: File, s: string) =
   file.write(s)
   file.flushFile()
 
 proc newLogger*(logFilepath: string): PLogger =
-  let startTime = getTime().getGMTime()
-  let log = logFilepath / startTime.format("dd'-'MM'-'yyyy'.logs'")
+  let startTime = getTime().utc()
+  let log = logFilepath / startTime.format("dd'-'MM'-'yyyy'.json'")
   if existsFile(log):
     result = loadLogger(log)
   else:
-    new(result)
+    new result
     result.startTime = startTime
     result.logFilepath = logFilepath
     doAssert open(result.logFile, log, fmAppend)
@@ -45,30 +45,30 @@ proc `$`(s: seq[string]): string =
     strutils.escape(x)
   result = "[" & join(escaped, ",") & "]"
 
-proc writeLog(logger: PLogger, msg: TIRCEvent) =
-  logger.logFile.writeFlush($$(time: getTime(), msg: msg) & "\n")
+proc writeLog(logger: PLogger, msg: IRCEvent) =
+  logger.logFile.writeFlush($(%*{"time": getTime(), "msg": msg}) & "\n")
 
-proc log*(logger: PLogger, msg: TIRCEvent) =
+proc log*(logger: PLogger, msg: IRCEvent) =
   if msg.origin != "#nim" and msg.cmd notin {MQuit, MNick}: return
-  if getTime().getGMTime().yearday != logger.startTime.yearday:
+  if getTime().utc().yearday != logger.startTime.yearday:
     # It's time to cycle to next day.
     # Reset logger.
     logger.logFile.close()
-    logger.startTime = getTime().getGMTime()
-    let log = logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.logs'")
+    logger.startTime = getTime().utc()
+    let log = logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.json'")
     doAssert open(logger.logFile, log, fmAppend)
     # Write start time
     logger.logFile.writeFlush($epochTime() & "\n")
-    
+
   case msg.cmd
   of MPrivMsg, MJoin, MPart, MNick, MQuit: # TODO: MTopic? MKick?
     #logger.items.add((getTime(), msg))
     #logger.save(logger.logFilepath / logger.startTime.format("dd'-'MM'-'yyyy'.json'"))
     writeLog(logger, msg)
-  else: nil
+  else: discard
 
 proc log*(logger: PLogger, nick, msg, chan: string) =
-  var m: TIRCEvent
+  var m: IRCEvent
   m.typ = EvMsg
   m.cmd = MPrivMsg
   m.params = @[chan, msg]

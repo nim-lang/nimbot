@@ -1,8 +1,10 @@
 
 body {
-  background-color: #2d2d2d;
-  color: #ffffff;
-  font-size: 12pt;
+  background-color: #171921;
+  color: #f8f8f2;
+  font-family: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
 }
 
 table {
@@ -15,42 +17,39 @@ table td, table th {
 }
 
 td.nick {
-  border-left: 1px solid #CC880A;
-  border-right: 1px solid #CC880A;
+  border-left: 1px solid #44475a;
+  border-right: 1px solid #44475a;
   text-align: right;
 }
 
 tr.join td.msg, tr.join td.nick {
-  color: #33DB09;
+  color: #50fa7b;
 }
 
 tr.quit td.msg, tr.quit td.nick {
-  color: #DB2109;
+  color: #ff5555;
 }
 
 tr.nick td.msg, tr.nick td.nick {
-  color: #098BDB;
+  color: #6272a4;
 }
 
 tr.part td.msg, tr.part td.nick {
-  color: #DB9909;
+  color: #ffb86c;
 }
 
 tr.action td.msg, tr.action td.nick {
   color: #C609DB;
 }
 
-a:link {
-  color: #F2A20C;
-
+a:link, a:visited {
+  color: #8be9fd;
+  text-decoration: none;
 }
 
 a:hover {
-  color: #CC880A;
-}
-
-a:visited {
-  color: rgb(161, 159, 7);
+  color: #8be9fd;
+  text-decoration: underline;
 }
 
 #controls {
@@ -59,7 +58,7 @@ a:visited {
 }
 
 hr {
-  background-color: #CC880A;
+  background-color: #44475a;
   border:0;
   height: 2px;
 }
@@ -70,7 +69,7 @@ td.selected {
 }
 
 a.time {
-  color: #FFFFFF;
+  color: #f8f8f2;
   text-decoration: none;
 }
 
