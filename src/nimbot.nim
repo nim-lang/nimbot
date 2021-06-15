@@ -16,10 +16,10 @@ type
     hubClient: AsyncSocket
 
 const
-  ircServer = "irc.freenode.net"
   joinChans = @["#nim", "#nimbuild"]
   announceChans = @["#nimbuild"]
   botNickname = "NimBot"
+  ircServer = "irc.libera.chat"
 
 proc getCommandArgs(state: State) =
   for kind, key, value in getOpt():
