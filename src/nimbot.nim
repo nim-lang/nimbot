@@ -204,7 +204,7 @@ proc open(): State =
 
   res.logger = newLogger(res.irclogsFilename)
 
-  res.ircClient = newAsyncIrc(ircServer, nick=botNickname,
+  res.ircClient = newAsyncIrc(ircServer, nick = botNickname,
        joinChans = joinChans,
        callback = (client: AsyncIRC, event: IrcEvent) =>
                      (onIrcEvent(client, event, res)))
@@ -267,7 +267,7 @@ routes:
   get "/":
     let curTime = getTime().utc()
     var path = state.irclogsFilename / curTime.format("dd'-'MM'-'yyyy'.json'")
-    if not existsFile(path):
+    if not fileExists(path):
       path = path.changeFileExt("logs")
     var logs = loadRenderer(path)
     resp logs.renderHTML(request)
@@ -285,12 +285,12 @@ routes:
     # TODO: Async file read.
     case format
     of "html":
-      if existsFile(logsPath):
+      if fileExists(logsPath):
         logs = loadRenderer(logsPath)
         resp logs.renderHTML(request)
       else:
         let logsHtml = logsPath.changeFileExt("html")
-        cond existsFile(logsHtml)
+        cond fileExists(logsHtml)
         resp readFile(logsHtml)
     of "json":
       resp readFile(logsPath.changeFileExt("json"))
