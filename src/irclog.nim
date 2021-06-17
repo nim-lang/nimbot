@@ -1,4 +1,4 @@
-import htmlgen, times, irc, streams, strutils, os, parseutils, marshal, sequtils
+import htmlgen, times, irc, streams, strutils, os, parseutils, marshal, sequtils, strtabs
 from xmltree import escape
 import json except to
 
@@ -8,6 +8,7 @@ type
     logFilepath*: string
     logFile*: File
   PLogger* = ref TLogger
+  LoggedIRCEvent* = object
 
 const
   webFP = {fpUserRead, fpUserWrite, fpUserExec,
@@ -45,8 +46,24 @@ proc `$`(s: seq[string]): string =
     strutils.escape(x)
   result = "[" & join(escaped, ",") & "]"
 
+proc toJson(msg: IRCEvent): JsonNode =
+  result = newJObject()
+  result["typ"] = %msg.typ
+  case msg.typ
+  of EvMsg:
+    for name, value in msg.fieldPairs:
+      when name notin ["tags"]:
+        result[name] = %value
+    result["tags"] = newJNull()
+  else:
+    discard # Other types have no fields.
+
 proc writeLog(logger: PLogger, msg: IRCEvent) =
-  logger.logFile.writeFlush($( %* {"time": getTime(), "msg": msg}) & "\n")
+  let event = %{
+    "time": %getTime(),
+    "msg": toJson(msg)
+  }
+  logger.logFile.writeFlush($(event) & "\n")
 
 proc log*(logger: PLogger, msg: IRCEvent) =
   if msg.origin != "#nim" and msg.cmd notin {MQuit, MNick}: return
