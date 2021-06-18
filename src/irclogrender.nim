@@ -89,17 +89,18 @@ const IRCColours = [
 ]
 
 proc colourMessage(msg: string): string =
+  echo("Calling with ", msg.repr)
   var
     currentChar = 0
     c: char
     openedTags = 0
     currentStyle = ""
-    bold, italic, underline = false
+    bold, italic, underline, color = false
   template switchStyle(style: var bool, css: string) =
     if not style:
       currentStyle &= css
       style = true
-    else:
+    elif openedTags > 0:
       result &= "</span>"
       openedTags -= 1
       style = false
@@ -111,9 +112,12 @@ proc colourMessage(msg: string): string =
     of 0x1D: switchStyle italic, "font-style: italic;"
     of 0x1F: switchStyle underline, "text-decoration: underline;"
     of 0x03:
-      let colourCode = to[int](msg[currentChar..^1])
-      currentStyle &= "color: " & IRCColours[colourCode] & ";"
-      currentChar += 2
+        let colourCode =
+          if not color: to[int](msg[currentChar..currentChar+1])
+          else: 0
+        if not color:
+          currentChar += 2
+        switchStyle(color, "color: " & IRCColours[colourCode] & ";")
     of 0x0F:
       result &= "</span>".repeat openedTags
       openedTags = 0
@@ -126,7 +130,8 @@ proc colourMessage(msg: string): string =
         openedTags += 1
         currentStyle = ""
       result &= c
-  result &= "</span>".repeat openedTags
+  if openedTags > 0:
+    result &= "</span>".repeat openedTags
 
 const NickColours = [
   "#6272a4",
@@ -251,3 +256,8 @@ proc renderHtml*(logger: PLogRenderer, req: jester.Request): string =
         )
       )
     )
+
+when isMainModule:
+  doAssert colourMessage("&lt;Rika&gt; so the file size") == """<span style="font-weight: bold;">&lt;Rika&gt;</span> <span style="font-weight: bold;font-style: italic;">so the file size</span>"""
+  doAssert(colourMessage("<System64 ~ Flandre Scarlet> (edit) 04removed \"to\"") == """<span style="font-weight: bold;"><System64 ~ Flandre Scarlet></span> (edit) <span style="color: #ff5555;">removed</span> "to"""")
+  echo("All good!")
