@@ -281,7 +281,10 @@ routes:
     cond (day.parseInt() <= 31)
     cond (month.parseInt() <= 12)
     var logs: PLogRenderer
-    let logsPath = state.irclogsFilename / "$1-$2-$3.logs" % [day, month, year]
+    var logsPath = state.irclogsFilename / "$1-$2-$3.logs" % [day, month, year]
+    if not fileExists(logsPath):
+      # New format introduced in https://github.com/nim-lang/nimbot/pull/15
+      logsPath = logsPath.changeFileExt("json")
     # TODO: Async file read.
     case format
     of "html":
@@ -292,9 +295,7 @@ routes:
         let logsHtml = logsPath.changeFileExt("html")
         cond fileExists(logsHtml)
         resp readFile(logsHtml)
-    of "json":
-      resp readFile(logsPath.changeFileExt("json"))
-    of "logs":
+    of "json", "logs":
       resp readFile(logsPath)
     else:
       halt()
