@@ -15,7 +15,7 @@ proc evalCode*(code: string): Future[EvaluationResult] {.async.} =
 
   let response = await client.post("https://play.nim-lang.org/compile",
                                    $payload)
-  if response.status == Http200:
+  if response.code == Http200:
     # Parse the response.
     let content = await response.bodyStream.readAll()
     let respObj =
@@ -41,5 +41,5 @@ proc evalCode*(code: string): Future[EvaluationResult] {.async.} =
     return EvaluationResult(success: success, log: log)
 
 when isMainModule:
-  let evalResult = waitFor evalCode("echo asd")
+  let evalResult = waitFor evalCode("echo \"asd\"")
   echo(evalResult)
