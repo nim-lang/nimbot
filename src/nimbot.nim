@@ -39,7 +39,7 @@ proc getCommandArgs(state: State) =
 
 proc refreshPackagesJson(state: State) {.async.} =
   var client = newAsyncHttpClient()
-  let resp = await client.get("https://raw.githubusercontent.com/nimrod-code/" &
+  let resp = await client.get("https://raw.githubusercontent.com/nim-lang/" &
     "packages/master/packages.json")
   if resp.status.startsWith("200"):
     try:
